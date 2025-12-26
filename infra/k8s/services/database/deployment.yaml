@@ -1,23 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-service
+  name: postgres
   namespace: nucleus-dev
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: auth-service
+      app: postgres
   template:
     metadata:
       labels:
-        app: auth-service
+        app: postgres
     spec:
       containers:
-        - name: auth-service
-          image: nucleus/auth-service:dev
+        - name: postgres
+          image: postgres:18
           ports:
-            - containerPort: 8080
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-secret
           resources:
             requests:
               memory: "128Mi"
