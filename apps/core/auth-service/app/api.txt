@@ -1,0 +1,7 @@
+curl -X POST http://localhost:8000/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "code=U56rgEqO6UN_rxLjt0Yx-BKlio34tEThYcN9Rgv28oM" \
+  -d "redirect_uri=https://webhook.site/aaa714cb-afaf-451e-bdce-d79a34449a2d" \
+  -d "client_id=forms-web" \
+  -d "code_verifier=hVPb5o-yyp2OJIBDuZ7LoHWF8ccqF4yuEDEiO3bHO1c"
