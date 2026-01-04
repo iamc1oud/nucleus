@@ -1,13 +1,14 @@
 from fastapi.responses import RedirectResponse
 from fastapi.exceptions import HTTPException
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
+from sqlmodel import Session, select
 import secrets
 from datetime import timedelta, datetime
 
-router = APIRouter()
+from ..database import get_session
+from ..models.oauth import AuthorizationCode
 
-# TEMP: in-memory storage (replace with DB)
-AUTHORIZATION_CODES = {}
+router = APIRouter()
 
 @router.get("/authorize")
 def authorize(
@@ -18,6 +19,7 @@ def authorize(
     state: str = Query(..., description="State"),
     code_challenge: str = Query(..., description="Code challenge"),
     code_challenge_method: str = Query(..., description="Code challenge method"),
+    session: Session = Depends(get_session)
 ):
     if response_type != "code":
         raise HTTPException(status_code=400, detail="unsupported_response_type")
@@ -38,15 +40,20 @@ def authorize(
 
     code = secrets.token_urlsafe(32)
 
-    AUTHORIZATION_CODES[code] = {
-        "client_id": client_id,
-        "user_id": user_id,
-        "scopes": scopes,
-        "code_challenge": code_challenge,
-        "code_challenge_method": code_challenge_method,
-        "redirect_uri": redirect_uri,
-        "expires_at": datetime.now() + timedelta(minutes=5)
-    }
+    # Create authorization code in database
+    auth_code = AuthorizationCode(
+        code=code,
+        client_id=client_id,
+        user_id=user_id,
+        scope=" ".join(scopes),
+        code_challenge=code_challenge,
+        code_challenge_method=code_challenge_method,
+        redirect_uri=redirect_uri,
+        expires_at=datetime.now() + timedelta(minutes=5)
+    )
+    
+    session.add(auth_code)
+    session.commit()
 
     redirect_uri = f"{redirect_uri}?code={code}"
 

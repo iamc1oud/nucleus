@@ -1,8 +1,11 @@
+from contextlib import asynccontextmanager
 from functools import lru_cache
-import os
-from fastapi import FastAPI
-import psycopg2
+from fastapi import FastAPI, Depends
+from sqlmodel import Session
 from .config import settings
+from .database import init_db, get_engine, get_session
+from .models import AuthorizationCode  # Import models to register them
+from .db_utils import cleanup_expired_codes, get_active_codes_count
 
 # APIs
 from .api.oidc import router as oidc_router
@@ -11,7 +14,17 @@ from .api.authorize import router as authorize_router
 from .api.token import router as token_router
 from .oidc.userinfo import router as userinfo_router
 
-app = FastAPI(title="Nucleus Auth Service")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("Starting up...")
+    init_db()
+    print("Database initialized")
+    yield
+    # Shutdown
+    print("Shutting down...")
+
+app = FastAPI(title="Nucleus Auth Service", lifespan=lifespan)
 
 app.include_router(oidc_router)
 app.include_router(jwks_router)
@@ -19,28 +32,28 @@ app.include_router(authorize_router)
 app.include_router(token_router)
 app.include_router(userinfo_router)
 
-def test_db():
-    setting = get_settings()
-    conn = psycopg2.connect(
-        host=setting.DB_HOST,
-        port=setting.DB_PORT,
-        dbname=setting.DB_NAME,
-        user=setting.DB_USER,
-        password=setting.DB_PASSWORD
-    )
-
-    conn.close()
-
 @lru_cache
 def get_settings():
     return settings.Settings()
-
-@app.on_event("startup")
-def startup():
-    test_db()
 
 @app.get("/health")
 def health():
     return {
         "status": "ok"
+    }
+
+@app.get("/admin/db-stats")
+def db_stats():
+    """Get database statistics"""
+    active_codes = get_active_codes_count()
+    return {
+        "active_authorization_codes": active_codes
+    }
+
+@app.post("/admin/cleanup")
+def cleanup_expired():
+    """Clean up expired authorization codes"""
+    cleaned_count = cleanup_expired_codes()
+    return {
+        "message": f"Cleaned up {cleaned_count} expired authorization codes"
     }
