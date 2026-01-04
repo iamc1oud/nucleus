@@ -6,6 +6,7 @@ from .jwks import router as jwks_router
 from .authorize import router as authorize_router
 from .token import router as token_router
 from .login import router as login_router
+from .signup import router as signup_router
 
 app = APIRouter()
 
@@ -14,4 +15,4 @@ app.include_router(jwks_router)
 app.include_router(authorize_router)
 app.include_router(token_router)
 app.include_router(login_router)
-
+app.include_router(signup_router)
