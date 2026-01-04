@@ -8,10 +8,7 @@ from .models import AuthorizationCode  # Import models to register them
 from .db_utils import cleanup_expired_codes, get_active_codes_count
 
 # APIs
-from .api.oidc import router as oidc_router
-from .api.jwks import router as jwks_router
-from .api.authorize import router as authorize_router
-from .api.token import router as token_router
+from .api.router import app as api_routes
 from .oidc.userinfo import router as userinfo_router
 
 @asynccontextmanager
@@ -26,10 +23,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Nucleus Auth Service", lifespan=lifespan)
 
-app.include_router(oidc_router)
-app.include_router(jwks_router)
-app.include_router(authorize_router)
-app.include_router(token_router)
+app.include_router(api_routes)
 app.include_router(userinfo_router)
 
 @lru_cache

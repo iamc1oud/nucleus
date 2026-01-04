@@ -14,7 +14,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Import all models to ensure they're registered with SQLModel
-from app.models.oauth import AuthorizationCode
+from app.models import AuthorizationCode, User
 from app.config.settings import Settings
 
 # this is the Alembic Config object, which provides

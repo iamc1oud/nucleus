@@ -7,6 +7,7 @@ from datetime import timedelta, datetime
 
 from ..database import get_session
 from ..models.oauth import AuthorizationCode
+from ..security.session import get_current_user
 
 router = APIRouter()
 
@@ -19,7 +20,8 @@ def authorize(
     state: str = Query(..., description="State"),
     code_challenge: str = Query(..., description="Code challenge"),
     code_challenge_method: str = Query(..., description="Code challenge method"),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_id: str = Depends(get_current_user)
 ):
     if response_type != "code":
         raise HTTPException(status_code=400, detail="unsupported_response_type")
@@ -34,9 +36,6 @@ def authorize(
 
     if client_id != "forms-web":
         raise HTTPException(status_code=400, detail="invalid_client")
-
-    # User stub
-    user_id = "dev-user-1"
 
     code = secrets.token_urlsafe(32)
 
